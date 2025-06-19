@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://accounts.google.com/gsi/client"></script>
     <script src="https://apis.google.com/js/api.js"></script>
+    <script src="config.js" type="module"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Rasa:wght@400;600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -612,15 +613,80 @@ document.addEventListener('DOMContentLoaded', function() {
             let adminRegistrationsData = [];
 
             function loadRegistrations() {
-                const savedData = localStorage.getItem('registrations');
-                if (savedData) {
-                    adminRegistrationsData = JSON.parse(savedData);
-                    updateAdminDashboard();
+                initGoogleSheetsAPI();
+            }
+
+            function initGoogleSheetsAPI() {
+                gapi.load('client:auth2', () => {
+                    gapi.client.init({
+                        apiKey: config.GOOGLE_SHEETS.API_KEY,
+                        clientId: config.GOOGLE_SHEETS.CLIENT_ID,
+                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                        scope: 'https://www.googleapis.com/auth/spreadsheets'
+                    }).then(() => {
+                        console.log('Google Sheets API initialized');
+                        loadFromGoogleSheets();
+                    }).catch(error => {
+                        console.error('Error initializing Google Sheets API:', error);
+                    });
+                });
+            }
+
+            async function loadFromGoogleSheets() {
+                try {
+                    const response = await gapi.client.sheets.spreadsheets.values.get({
+                        spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
+                        range: 'Sheet1!A:J'
+                    });
+                    const rows = response.result.values || [];
+                    if (rows.length) {
+                        adminRegistrationsData = rows.slice(1).map(row => ({
+                            fullName: row[0] || '',
+                            email: row[1] || '',
+                            nakshatra: row[2] || '',
+                            rasi: row[3] || '',
+                            sevaCycle: row[4] || '',
+                            startMonth: row[5] || '',
+                            address: row[6] || '',
+                            status: row[7] || 'Pending',
+                            registrationDate: row[8] || new Date().toISOString(),
+                            donationAmount: row[9] || '0'
+                        }));
+                        updateAdminDashboard();
+                    }
+                } catch (error) {
+                    console.error('Error loading from Google Sheets:', error);
                 }
             }
 
-            function saveRegistrations() {
-                localStorage.setItem('registrations', JSON.stringify(adminRegistrationsData));
+            async function saveToGoogleSheets(registrationData) {
+                try {
+                    const response = await gapi.client.sheets.spreadsheets.values.append({
+                        spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
+                        range: 'Sheet1!A:J',
+                        valueInputOption: 'RAW',
+                        insertDataOption: 'INSERT_ROWS',
+                        resource: {
+                            values: [[  
+                                registrationData.fullName,
+                                registrationData.email,
+                                registrationData.nakshatra,
+                                registrationData.rasi,
+                                registrationData.sevaCycle,
+                                registrationData.startMonth,
+                                registrationData.address,
+                                registrationData.status,
+                                new Date().toISOString(),
+                                registrationData.donationAmount
+                            ]]
+                        }
+                    });
+                    console.log('Data saved to Google Sheets:', response);
+                    return true;
+                } catch (error) {
+                    console.error('Error saving to Google Sheets:', error);
+                    return false;
+                }
             }
 
             document.addEventListener('DOMContentLoaded', function() {
