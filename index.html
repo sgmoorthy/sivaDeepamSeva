@@ -616,21 +616,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 initGoogleSheetsAPI();
             }
 
-            function initGoogleSheetsAPI() {
-                gapi.load('client:auth2', () => {
-                    gapi.client.init({
-                        apiKey: config.GOOGLE_SHEETS.API_KEY,
-                        clientId: config.GOOGLE_SHEETS.CLIENT_ID,
-                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-                        scope: 'https://www.googleapis.com/auth/spreadsheets'
-                    }).then(() => {
-                        console.log('Google Sheets API initialized');
-                        loadFromGoogleSheets();
-                    }).catch(error => {
-                        console.error('Error initializing Google Sheets API:', error);
-                    });
-                });
-            }
+            async function initGoogleSheetsAPI() {
+    try {
+        // Validate config first
+        config.GOOGLE_SHEETS.validate();
+        
+        await gapi.load('client:auth2', () => {
+            return gapi.client.init({
+                apiKey: config.GOOGLE_SHEETS.API_KEY,
+                clientId: config.GOOGLE_SHEETS.CLIENT_ID,
+                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                scope: 'https://www.googleapis.com/auth/spreadsheets'
+            });
+        });
+        console.log('Google Sheets API initialized');
+        await loadFromGoogleSheets();
+    } catch (error) {
+        console.error('Failed to initialize Google Sheets API:', error);
+        alert('Failed to initialize Google Sheets. Please check your configuration.');
+    }
+}
 
             async function loadFromGoogleSheets() {
                 try {
@@ -660,34 +665,51 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             async function saveToGoogleSheets(registrationData) {
-                try {
-                    const response = await gapi.client.sheets.spreadsheets.values.append({
-                        spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
-                        range: 'Sheet1!A:J',
-                        valueInputOption: 'RAW',
-                        insertDataOption: 'INSERT_ROWS',
-                        resource: {
-                            values: [[  
-                                registrationData.fullName,
-                                registrationData.email,
-                                registrationData.nakshatra,
-                                registrationData.rasi,
-                                registrationData.sevaCycle,
-                                registrationData.startMonth,
-                                registrationData.address,
-                                registrationData.status,
-                                new Date().toISOString(),
-                                registrationData.donationAmount
-                            ]]
-                        }
-                    });
-                    console.log('Data saved to Google Sheets:', response);
-                    return true;
-                } catch (error) {
-                    console.error('Error saving to Google Sheets:', error);
-                    return false;
-                }
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+        try {
+            // Validate data before saving
+            if (!registrationData.fullName || !registrationData.email) {
+                throw new Error('Required fields missing');
             }
+            
+            const response = await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
+                range: 'Sheet1!A:J',
+                valueInputOption: 'RAW',
+                insertDataOption: 'INSERT_ROWS',
+                resource: {
+                    values: [[
+                        registrationData.fullName,
+                        registrationData.email,
+                        registrationData.nakshatra,
+                        registrationData.rasi,
+                        registrationData.sevaCycle,
+                        registrationData.startMonth,
+                        registrationData.address,
+                        registrationData.status,
+                        new Date().toISOString(),
+                        registrationData.donationAmount
+                    ]]
+                }
+            });
+            console.log('Data saved to Google Sheets:', response);
+            return true;
+        } catch (error) {
+            console.error(`Save attempt ${attempt + 1} failed:`, error);
+            attempt++;
+            if (attempt === maxRetries) {
+                alert('Failed to save registration. Please try again later.');
+                return false;
+            }
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+    }
+    return false;
+}
 
             document.addEventListener('DOMContentLoaded', function() {
                 loadRegistrations();
@@ -711,16 +733,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     registrationDate: new Date().toLocaleDateString('en-GB'),
                     status: "In Progress"
                 };
-                adminRegistrationsData.push(newRegistration);
-                saveRegistrations();
-
-                hideAllSections();
-                document.getElementById('register').classList.remove('hidden');
-                registrationForm.classList.add('hidden');
-                confirmationMessageDiv.classList.remove('hidden');
-
-                updateAdminDashboard();
-                registrationForm.reset();
+                
+                // Save to Google Sheets
+                saveToGoogleSheets(newRegistration).then(success => {
+                    if (success) {
+                        // Show confirmation message
+                        hideAllSections();
+                        document.getElementById('register').classList.remove('hidden');
+                        registrationForm.classList.add('hidden');
+                        confirmationMessageDiv.classList.remove('hidden');
+                        
+                        // Add UPI payment button handler
+                        document.getElementById('upi-payment-btn').addEventListener('click', function() {
+                            // Replace with your actual UPI payment link
+                            const upiLink = `upi://pay?pa=your-upi-id@bank&pn=Siva%20Deepam%20Seva&am=${getSevaAmount(newRegistration.sevaCycle)}&tn=Seva%20Registration%20${newRegistration.id}`;
+                            window.location.href = upiLink;
+                        });
+                        
+                        updateAdminDashboard();
+                        registrationForm.reset();
+                    } else {
+                        alert('There was an error saving your registration. Please try again.');
+                    }
+                });
             });
 
             getInsightBtn.addEventListener('click', async () => {
@@ -881,7 +916,18 @@ document.addEventListener('DOMContentLoaded', function() {
             let participantsChartInstance = null;
             let adminDonationChartInstance = null; // New chart instance for admin donation comparison
 
-            function updateAdminDashboard() {
+            // Helper function to get seva amount based on cycle
+function getSevaAmount(sevaCycle) {
+    const sevaAmounts = {
+        'Monthly Seva': 1116,
+        'Quarterly Seva': 3116,
+        'Half-Yearly Seva': 6116,
+        'Yearly Seva': 11116
+    };
+    return sevaAmounts[sevaCycle] || 1116; // Default to Monthly Seva amount if cycle not found
+}
+
+function updateAdminDashboard() {
                 const total = adminRegistrationsData.length;
                 const active = adminRegistrationsData.filter(reg => reg.status === 'In Progress').length;
                 const completed = adminRegistrationsData.filter(reg => reg.status === 'Completed').length;
