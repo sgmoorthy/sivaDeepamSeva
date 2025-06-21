@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siva Deepam Seva - Divine Offering</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="config.js" type="module"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Rasa:wght@400;600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Spiritual Harmony (Saffron, Gold, Deep Blue, Warm White) -->
+    <!-- Application Structure Plan: A single-page, top-down narrative flow. The structure guides the user from spiritual inspiration to tangible action. It starts with an immersive Hero section, flows into the 'The Legend' to build context and emotional connection, presents the 'Seva Options' as a clear, comparable choice (visualized with a chart), and culminates in the 'Registration' form. A new Admin section is added, accessible via a login, which then reveals a dashboard with registration details, statistics, and management tools. This design separates user and admin functionalities while maintaining a single-page structure. A sticky navigation bar provides immediate access to any section for users who wish to explore non-linearly. -->
+    <!-- Visualization & Content Choices:
+        1. Report Info: Bilingual Story (The Legend). Goal: Inform/Inspire. Viz/Method: Interactive Toggleable Content Block. Interaction: User clicks a button to switch between English and Tamil. Justification: Keeps the UI clean and honors both languages without cluttering the page. Library/Method: Vanilla JS.
+        2. Report Info: Seva Cycles/Donation Amounts (now only on admin). Goal: Compare/Select (admin view). Viz/Method: Interactive Cards (user view) + Horizontal Bar Chart (admin view). Interaction: Hovering on cards for emphasis, clicking 'Select' scrolls to and pre-fills the registration form. The admin chart provides an immediate visual comparison of donation tiers for management. Justification: User-facing view focuses on selection, admin view on aggregated data. Library/Method: Chart.js for the canvas-based chart, Vanilla JS for interactivity.
+        3. Report Info: Registration. Goal: Action/Input. Viz/Method: Dynamic HTML Form. Interaction: Dropdown for Seva choice is pre-filled by the 'Seva Options' section. Start month is dynamically populated with upcoming Pournami dates. Justification: Reduces user effort and streamlines the registration process. Library/Method: Vanilla JS.
+        4. Report Info: Divine Insight (Gemini API Feature). Goal: Engage/Provide spiritual guidance. Viz/Method: Dynamically generated text within a confirmation modal. Interaction: User clicks a button after registration to receive a personalized spiritual insight from an LLM. Justification: Enhances the spiritual experience and provides a unique value proposition. Library/Method: Gemini API (gemini-2.0-flash), Vanilla JS for API call and UI updates.
+        5. Report Info: Admin Dashboard (New Feature). Goal: Manage Registrations & View Stats. Viz/Method: Tabular data with filters, sorting (client-side), and action buttons; Bar Chart for participants per cycle; Bar Chart for donation comparison. Interaction: Login to access, filter/search table, toggle status, edit/delete entries via modals, export data. Justification: Provides administrators with comprehensive tools for managing Seva registrations efficiently, including financial oversight. Library/Method: Chart.js for the dashboard charts, Vanilla JS for all table and dashboard interactions, filtering, and modal management.
+        6. Report Info: AI Generated Image (New Feature). Goal: Enhance engagement/Visualize devotion. Viz/Method: Dynamically generated image using a large language model. Interaction: User clicks a button to generate an image. Justification: Provides a unique visual representation of their offering and adds a "wow" factor. Library/Method: Gemini API (imagen-3.0-generate-002), Vanilla JS for API call and UI updates.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #FFF8E1;
+        }
+        .font-serif-title {
+            font-family: 'Rasa', serif;
+        }
+        .font-serif-body {
+            font-family: 'Noto Serif', serif;
+        }
+        .btn-primary {
+            @apply bg-amber-600 text-white hover:bg-amber-700 transition-colors duration-300;
+        }
+        .btn-secondary {
+            @apply bg-blue-800 text-white hover:bg-blue-900 transition-colors duration-300;
+        }
+        .section-title {
+            @apply text-4xl md:text-5xl font-serif-title font-bold text-blue-900 text-center;
+        }
+        .card {
+            @apply bg-white rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300;
+        }
+        .glowing-lamp {
+            font-size: 3rem;
+            color: #FFC107;
+            text-shadow: 0 0 5px #FFC107, 0 0 10px #FFC107, 0 0 20px #FF9800, 0 0 30px #FF9800;
+            animation: flicker 1.5s infinite alternate;
+        }
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% {
+                text-shadow:
+                0 0 4px #FFC107,
+                0 0 11px #FFC107,
+                0 0 19px #FF9800,
+                0 0 40px #FF9800,
+                0 0 80px #FF5722,
+                0 0 90px #FF5722,
+                0 0 100px #FF5722,
+                0 0 150px #FF5722;
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+
+        .section-focus {
+            animation: sectionFocus 1s ease;
+        }
+
+        @keyframes sectionFocus {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+        .modal-large-content {
+            max-width: 90%;
+            width: 900px;
+        }
+        .admin-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .form-container {
+            position: relative;
+            width: 100%;
+            background: white;
+        }
+        
+        .form-container iframe {
+            background: white;
+            border-radius: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container iframe {
+                min-height: 1000px; /* Increased height for mobile */
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#home" class="flex items-center space-x-2">
+                <div class="glowing-lamp">🪔</div>
+                <span class="text-xl font-bold font-serif-title text-amber-700">Siva Deepam Seva</span>
+            </a>
+            <nav class="hidden md:flex space-x-10">
+                <a href="#home" class="text-gray-600 hover:text-amber-600 nav-link">Home</a>
+                <a href="#legend" class="text-gray-600 hover:text-amber-600 nav-link">The Legend</a>
+                <a href="#seva" class="text-gray-600 hover:text-amber-600 nav-link">Seva Options</a>
+                <a href="#register" class="nav-link text-base font-medium text-gray-500 hover:text-gray-900">Register Now</a>
+                <a id="admin-nav-link" href="#" class="font-semibold px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Admin</a>
+            </nav>
+            <button id="mobile-menu-button" class="md:hidden text-amber-700 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4">
+            <a href="#home" class="block py-2 text-gray-600 hover:text-amber-600 nav-link">Home</a>
+            <a href="#legend" class="block py-2 text-gray-600 hover:text-amber-600 nav-link">The Legend</a>
+            <a href="#seva" class="block py-2 text-gray-600 hover:text-amber-600 nav-link">Seva Options</a>
+            <a href="#register" class="block mt-2 text-center w-full font-semibold px-4 py-2 rounded-lg btn-primary nav-link">Register Now</a>
+            <a id="admin-nav-link-mobile" href="#" class="block mt-2 text-center w-full font-semibold px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Admin</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="home" class="relative min-h-screen flex items-center justify-center bg-cover bg-center" style="background-image: url('images/home_image.png');">
+            <div class="absolute inset-0 bg-black/50"></div>
+            <div class="relative text-center text-white px-4 z-10">
+                <h1 class="text-5xl md:text-7xl font-bold font-serif-title drop-shadow-lg">Join the Circle of Light</h1>
+                <p class="mt-4 text-xl md:text-2xl max-w-3xl mx-auto font-serif-body">Offer a lamp to Siva on your sacred cycle and receive His divine blessings.</p>
+                <a href="#seva" class="mt-8 inline-block px-10 py-4 text-lg font-bold rounded-lg btn-primary shadow-lg transform hover:scale-105 transition-transform">Start My Deepam Seva</a>
+            </div>
+        </section>
+
+        <section id="legend" class="py-20 md:py-28 bg-amber-50">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title mb-4">The Legend Behind the Flame</h2>
+                <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-12">This section tells the sacred story that inspired the Siva Deepam Seva. It highlights the profound spiritual merit of offering a lamp, showing how even the smallest act of devotion can earn immense divine grace. Use the buttons below to read the story in your preferred language.</p>
+
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12">
+                    <div class="flex justify-center mb-8 border-b-2 border-amber-200 pb-4">
+                        <button id="lang-en-btn" class="px-6 py-2 font-semibold rounded-l-lg btn-secondary">English</button>
+                        <button id="lang-ta-btn" class="px-6 py-2 font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-r-lg transition-colors">தமிழ் (Tamil)</button>
+                    </div>
+
+                    <div id="story-en" class="space-y-4 font-serif-body text-lg text-gray-700 leading-relaxed">
+                        <p class="font-bold text-xl text-amber-700">Vedaranyam — the land adorned with the glory of the divine lamp.</p>
+                        <p>At the sacred Vedaranyeswarar Temple, when the <i>arthajama pooja</i> (late-night worship) concluded and the holy sanctum doors were closed, the lamp within the sanctum was flickering, on the verge of going out.</p>
+                        <p>In that divine stillness, a tiny mouse approached, drawn by the scent of ghee. As it tried to sip the ghee, its nose touched the wick — and in that sacred moment, the flame was stirred and burst forth into a bright, radiant glow.</p>
+                        <p>Though it was a mere act of instinct, it rekindled the sacred flame — a symbol of devotion, light, and divine presence.</p>
+                        <p>Lord Shiva, ever compassionate, saw this humble act. As a mark of grace, He blessed the mouse to be reborn in its next birth as Mahabali Chakravarthi, a noble emperor of great fame.</p>
+                        <p>This story highlights the immense spiritual merit of even the smallest act of service done in a temple — especially the lighting of a lamp.</p>
+                        <p class="font-semibold text-blue-900">In temples, the lamp is not just light — it is the presence of the Divine. To keep it burning is to keep devotion alive.</p>
+                    </div>
+
+                    <div id="story-ta" class="hidden space-y-4 font-serif-body text-lg text-gray-700 leading-relaxed">
+                        <p class="font-bold text-xl text-amber-700">வேதாரண்யம் – விளக்கழகால் புகழ்பெற்ற புநித நிலம்</p>
+                        <p>வேதாரண்யேஸ்வரர் கோவிலில் அர்த்தசாம் பூஜை முடிந்து திருக்கதவு மூடப்படுபோது, கருவறையில் உள்ள விளக்கு அணையத் தையாராக இருந்தது.</p>
+                        <p>அந்த நேரத்தில் ஒரு எலி நெய் வாசனைக்காக வந்தது. அது நெய்யை சுவைக்க முயன்றபோது, அததின் மூக்கு தீபத்தைக் தோட, தீ மீண்டும் பிரகாசமாக் எரியத் தொடங்கியது.</p>
+                        <p>அது சிறிய தூண்டுதலால் புநித விளக்கு மீண்டும் ஏரியதைக் கண்ணியிட்டார், கருணைமிகு சிவபெருமான் அதை ஆழ்ந்த பக்தியாக ஏற்று, அதுத்த பிறவியில் அந்த எலியை மகாபலி சக்கரவர்த்தியாக்க ஆசீர்வதித்தார்.</p>
+                        <p>கோயிலில் ஒரு விளக்கை ஏற்றுவது — அது ஒரு தீபமாக அல்ல, ஒரு தெய்வீக அருள் நம்முள் நிலைத்திருப்பதற்கான ஒரு புனித செயல்.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="seva" class="py-20 md:py-28">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title mb-4">Choose Your Seva</h2>
+                 <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-12">Here you can select a lamp offering that aligns with your devotional goals. Each option provides a unique way to participate, and all donations directly support the temple rituals.</p>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+                    <div class="card col-span-1 md:col-span-2 lg:col-span-1 lg:row-span-2 p-6 flex flex-col justify-center items-center text-center bg-blue-900 text-white">
+                         <h3 class="text-3xl font-serif-title font-bold text-amber-400">Seva Inclusions</h3>
+                         <p class="mt-4 text-blue-100">Every Seva offering you make is a complete contribution to the sacred ritual. Your donation covers all necessary items and services to ensure the lamp burns brightly on your behalf.</p>
+                         <ul class="mt-6 space-y-3 text-left text-lg">
+                            <li class="flex items-center"><span class="text-amber-400 mr-3">🪔</span> Ghee / Oil for the lamp</li>
+                            <li class="flex items-center"><span class="text-amber-400 mr-3">🔥</span> High-quality Wick</li>
+                            <li class="flex items-center"><span class="text-amber-400 mr-3">🙏</span> Pooja (Worship Rituals)</li>
+                            <li class="flex items-center"><span class="text-amber-400 mr-3">🌺</span> Archana (Prayers with your details)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="register" class="py-20 md:py-28 bg-amber-50">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title mb-4">Register for Your Seva</h2>
+                <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-12">Complete this form to register for your lamp offering. Your details will be used for the Archana (prayers) and to send you prasadam after the Seva is completed.</p>
+                <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <!-- Form container with responsive padding -->
+                    <div class="p-4 md:p-8 form-container">
+                        <!-- Replace YOUR_GOOGLE_FORM_EMBED_URL with your actual Google Form URL -->
+                        <iframe 
+                            id="seva-registration-form"
+                            class="w-full transition-all duration-300 ease-in-out"
+                            style="min-height: 800px;"
+                            src="https://docs.google.com/forms/d/e/1FAIpQLSdchsSg4JBfSE498vNDg5r3oyf24jbwo726SMnxaKBFhuVXrA/viewform?embedded=true"
+                            frameborder="0"
+                            marginheight="0"
+                            marginwidth="0"
+                            allowfullscreen
+                            webkitallowfullscreen
+                            mozallowfullscreen>
+                            Loading...
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+                    <!-- Registration confirmation and Gemini feature -->
+                    <div id="confirmation-message" class="hidden mt-8 text-center">
+                        <p class="text-xl font-bold text-blue-800">Your registration has been successfully submitted! 🙏</p>
+                        <p class="mt-4 text-gray-700">You will now be redirected to the secure payment gateway. Your e-certificate and prasadam details will be sent via email.</p>
+                        <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4 mt-6">
+                            <button id="upi-payment-btn" class="inline-block px-8 py-3 text-lg font-bold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors shadow-lg transform hover:scale-105">💳 Proceed to UPI Payment</button>
+                            <button id="get-insight-btn" class="inline-block px-8 py-3 text-lg font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-lg transform hover:scale-105">✨ Get Your Divine Insight</button>
+                            <button id="generate-image-btn" class="inline-block px-8 py-3 text-lg font-bold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-lg transform hover:scale-105">🖼️ Generate Divine Image</button>
+                        </div>
+                        <div id="generated-image-section" class="mt-8 hidden">
+                            <h4 class="text-xl font-bold text-blue-900 mb-4">Generated Divine Image</h4>
+                            <div id="image-loading" class="mt-4 text-amber-600 hidden">
+                                Generating your divine image... <span class="animate-spin">🌀</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Login Section -->
+        <section id="admin-login" class="py-20 md:py-28 bg-blue-50 min-h-screen flex items-center justify-center hidden">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title mb-12">Admin Login</h2>
+                <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12">
+                    <form id="admin-login-form" class="space-y-6">
+                        <div>
+                            <label for="admin-username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <input type="text" id="admin-username" name="admin-username" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="admin-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" id="admin-password" name="admin-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <p id="login-error" class="text-red-500 text-sm hidden">Invalid username or password.</p>
+                        <div>
+                            <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium btn-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Login</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard Section -->
+        <section id="admin-dashboard" class="py-20 md:py-28 bg-amber-50 hidden">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title mb-4">Admin Dashboard</h2>
+                <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-12">This dashboard provides an overview of lamp offering registrations and allows you to manage them. Data shown is for demonstration purposes and is reset on page refresh as no persistent database is used.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    <div class="card p-6">
+                        <h3 class="text-2xl font-serif-title font-bold text-blue-900 mb-4">Summary Statistics</h3>
+                        <p class="text-xl text-gray-700"><span class="font-bold text-amber-600" id="total-registrations">0</span> Total Registrations</p>
+                        <p class="text-xl text-gray-700 mt-2"><span class="font-bold text-amber-600" id="active-cycles">0</span> Active Cycles</p>
+                        <p class="text-xl text-gray-700 mt-2"><span class="font-bold text-amber-600" id="completed-cycles">0</span> Completed Cycles</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-2xl font-serif-title font-bold text-blue-900 mb-4">Participants per Seva Cycle</h3>
+                        <div class="chart-container h-80 max-h-[320px]">
+                            <canvas id="participantsChart"></canvas>
+                        </div>
+                    </div>
+                     <div class="card p-6 col-span-1 md:col-span-2">
+                        <h3 class="text-2xl font-serif-title font-bold text-blue-900 mb-4">Donation Comparison by Seva Type</h3>
+                        <div class="chart-container h-80 max-h-[320px]">
+                            <canvas id="adminDonationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-3xl font-serif-title font-bold text-blue-900 text-center mb-8">Registrations View</h3>
+
+                <div class="bg-white rounded-2xl shadow-xl p-8 md:p-12 mb-12">
+                    <div class="flex flex-col md:flex-row items-center justify-between mb-6 space-y-4 md:space-y-0 md:space-x-4">
+                        <input type="text" id="filter-keyword" placeholder="Search by Name/Email" class="flex-grow px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
+                        <select id="filter-month" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
+                            <option value="">Filter by Month</option>
+                        </select>
+                        <select id="filter-cycle" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
+                            <option value="">Filter by Cycle</option>
+                        </select>
+                        <button id="export-csv" class="px-6 py-2 font-semibold rounded-lg btn-secondary">Export CSV</button>
+                        <button id="export-excel" class="px-6 py-2 font-semibold rounded-lg btn-secondary">Export Excel</button>
+                    </div>
+
+                    <div class="admin-table-container">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cycle Type</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Month</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Date</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="registrations-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Registration rows will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="admin-logout-btn" class="inline-block px-8 py-3 text-lg font-bold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg">Logout</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-blue-900 text-white">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-3 gap-8 text-center md:text-left">
+                <div>
+                    <h4 class="text-lg font-bold text-amber-400">Siva Deepam Seva</h4>
+                    <p class="mt-2 text-blue-200">An initiative to keep the divine flame burning at the sacred Siva Adhistanam & Surandai.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-amber-400">Contact & Location</h4>
+                    <p class="mt-2 text-blue-200">Email: info@sivafoundation.org.in</p>
+                    <p class="mt-1 text-blue-200">Phone: +91 77086 54851</p>
+                    <p class="mt-1 text-blue-200">Sri Siva Swamigal Adhistanam, Vaaikangarai,Sivapuri,Chidadambaram,Tamil Nadu</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-amber-400">Join the Circle of Light</h4>
+                    <p class="mt-2 text-blue-200">Subscribe for updates on Poojas and temple events.</p>
+                    <form class="mt-4 flex flex-col sm:flex-row gap-2">
+                        <input type="email" placeholder="Your email address" class="w-full px-4 py-2 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        <button type="submit" class="px-6 py-2 rounded-md btn-primary">Subscribe</button>
+                    </form>
+                    <div class="mt-4 flex justify-center md:justify-start space-x-4">
+                        <a href="#" class="text-blue-200 hover:text-amber-400">FB</a>
+                        <a href="#" class="text-blue-200 hover:text-amber-400">TW</a>
+                        <a href="#" class="text-blue-200 hover:text-amber-400">IG</a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-blue-800 text-center text-blue-300 text-sm">
+                <p>&copy; <span id="footer-year"></span> Siva Deepam Seva. All Rights Reserved. Designed with devotion.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- தெய்வீக உள்ளீடு மோடல் (Divine Insight Modal) -->
+    <div id="insight-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="close-insight-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">✖</button>
+            <h3 class="text-2xl font-serif-title font-bold text-blue-900 mb-4">உங்கள் தெய்வீக உள்ளீடு</h3>
+            <div id="insight-content" class="text-lg text-gray-700 font-serif-body">
+                <!-- உள்ளீடு இங்கே ஏற்றப்படும் (Insight will be loaded here) -->
+                <p>உள்ளீடு ஏற்றுகிறது...</p>
+            </div>
+            <div id="insight-loading" class="mt-4 text-amber-600 hidden">உள்ளீட்டை உருவாக்குகிறது... <span class="animate-spin">🌀</span></div>
+        </div>
+    </div>
+
+    <!-- Edit Registration Modal -->
+    <div id="edit-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content modal-large-content">
+            <button id="close-edit-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">✖</button>
+            <h3 class="text-2xl font-serif-title font-bold text-blue-900 mb-4">Edit Registration</h3>
+            <form id="edit-registration-form" class="space-y-4 text-left">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label for="edit-full-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input type="text" id="edit-full-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="edit-email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="edit-email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="edit-nakshatra-rasi" class="block text-sm font-medium text-gray-700">Nakshatra / Rasi</label>
+                    <input type="text" id="edit-nakshatra-rasi" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="edit-seva-cycle" class="block text-sm font-medium text-gray-700">Seva Cycle</label>
+                    <select id="edit-seva-cycle" class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 rounded-md"></select>
+                </div>
+                <div>
+                    <label for="edit-start-month" class="block text-sm font-medium text-gray-700">Preferred Start Pournami</label>
+                    <select id="edit-start-month" class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 rounded-md"></select>
+                </div>
+                <div>
+                    <label for="edit-address" class="block text-sm font-medium text-gray-700">Address</label>
+                    <textarea id="edit-address" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+                </div>
+                <div>
+                    <label for="edit-status" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="edit-status" class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 rounded-md">
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-edit-btn" class="px-6 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="px-6 py-2 rounded-md btn-secondary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-serif-title font-bold text-red-700 mb-4">Confirm Deletion</h3>
+            <p class="text-lg text-gray-700 mb-6">Are you sure you want to delete this registration? This action cannot be undone.</p>
+            <div class="flex justify-center space-x-4">
+                <button id="cancel-delete-btn" class="px-6 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">Cancel</button>
+                <button id="confirm-delete-btn" class="px-6 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">Delete</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const sevaData = [
+    { id: 'MA', days: 48, name: 'Mahadeepa Arpanam', amount: 2500, color: 'rgba(255, 99, 132, 0.7)' },
+    { id: 'SJS', days: 21, name: 'Shiva Jwala Seva', amount: 1200, color: 'rgba(54, 162, 235, 0.7)' },
+    { id: 'JSS', days: 11, name: 'Jyoti Sankalpa Seva', amount: 700, color: 'rgba(255, 206, 86, 0.7)' },
+    { id: 'TS', days: 3, name: 'Trideepa Seva', amount: 300, color: 'rgba(75, 192, 192, 0.7)' }
+];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadRegistrations();
+            loadRegistrations();
+            // Handle all navigation links including the Seva button
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+                    
+                    if (targetSection) {
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        
+                        // Add focus effect to the target section
+                        targetSection.classList.add('section-focus');
+                        setTimeout(() => {
+                            targetSection.classList.remove('section-focus');
+                        }, 1000);
+                    }
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const langEnBtn = document.getElementById('lang-en-btn');
+            const langTaBtn = document.getElementById('lang-ta-btn');
+            const storyEn = document.getElementById('story-en');
+            const storyTa = document.getElementById('story-ta');
+
+            langEnBtn.addEventListener('click', () => {
+                storyEn.classList.remove('hidden');
+                storyTa.classList.add('hidden');
+                langEnBtn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                langEnBtn.classList.add('btn-secondary');
+                langTaBtn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                langTaBtn.classList.remove('btn-secondary');
+            });
+
+            langTaBtn.addEventListener('click', () => {
+                storyTa.classList.remove('hidden');
+                storyEn.classList.add('hidden');
+                langTaBtn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                langTaBtn.classList.add('btn-secondary');
+                langEnBtn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                langEnBtn.classList.remove('btn-secondary');
+            });
+
+            const sevaData = [
+                { id: 'MA', days: 48, name: 'Mahadeepa Arpanam', amount: 2500, color: 'rgba(255, 99, 132, 0.7)' },
+                { id: 'SJS', days: 21, name: 'Shiva Jwala Seva', amount: 1200, color: 'rgba(54, 162, 235, 0.7)' },
+                { id: 'JSS', days: 11, name: 'Jyoti Sankalpa Seva', amount: 700, color: 'rgba(255, 206, 86, 0.7)' },
+                { id: 'TS', days: 3, name: 'Trideepa Seva', amount: 300, color: 'rgba(75, 192, 192, 0.7)' }
+                /*,                { id: 'EDS', days: 1, name: 'Eka Deepa Seva', amount: 108, color: 'rgba(153, 102, 255, 0.7)' }*/
+            ];
+
+            const sevaCycleSelect = document.getElementById('seva-cycle');
+            const sevaGrid = document.querySelector('#seva .grid');
+
+            // Populate seva options for main registration form
+            sevaData.forEach(seva => {
+                const option = document.createElement('option');
+                option.value = seva.id;
+                option.textContent = `${seva.name} (₹${seva.amount})`;
+                sevaCycleSelect.appendChild(option);
+
+                const card = document.createElement('div');
+                card.className = 'card p-6 text-center';
+                card.innerHTML = `
+                    <h3 class="text-2xl font-serif-title font-bold text-blue-900">${seva.name}</h3>
+                    <p class="text-xl text-gray-500 mt-2">${seva.days} Days</p>
+                    <p class="text-4xl font-bold text-amber-600 my-4">₹${seva.amount.toLocaleString('en-IN')}</p>
+                    <button class="select-seva-btn w-full px-6 py-3 font-semibold rounded-lg btn-primary" data-seva-id="${seva.id}">Select Seva</button>
+                `;
+                sevaGrid.appendChild(card);
+            });
+
+            document.querySelectorAll('.select-seva-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const sevaId = this.getAttribute('data-seva-id');
+                    sevaCycleSelect.value = sevaId;
+                    document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            const pournamiSelect = document.getElementById('start-month');
+
+            function getUpcomingPournamiDates(count) {
+                const dates = [];
+                let currentDate = new Date();
+
+                for (let i = 0; i < count; i++) {
+                    let searchDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 15); // Approximate 15th for Pournami
+
+                    if (searchDate < currentDate) { // If this month's 15th is past, go to next month
+                        searchDate.setMonth(searchDate.getMonth() + 1);
+                    }
+                    dates.push(searchDate);
+                }
+                return dates;
+            }
+
+            const upcomingPournamis = getUpcomingPournamiDates(6);
+            upcomingPournamis.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date.toISOString().split('T')[0];
+                option.textContent = date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+                pournamiSelect.appendChild(option);
+            });
+
+            const registrationForm = document.getElementById('registration-form');
+            const confirmationMessageDiv = document.getElementById('confirmation-message');
+            const getInsightBtn = document.getElementById('get-insight-btn');
+            const insightModalOverlay = document.getElementById('insight-modal-overlay');
+            const closeInsightModal = document.getElementById('close-insight-modal');
+            const insightContent = document.getElementById('insight-content');
+            const insightLoading = document.getElementById('insight-loading');
+
+            const generateImageBtn = document.getElementById('generate-image-btn');
+            const generatedImageSection = document.getElementById('generated-image-section');
+            const generatedImage = document.getElementById('generated-image');
+            const imageLoading = document.getElementById('image-loading');
+            const imageError = document.getElementById('image-error');
+
+
+            // --- Admin Panel Data & Functions ---
+            let adminRegistrationsData = [];
+
+            function loadRegistrations() {
+                initGoogleSheetsAPI();
+            }
+
+            async function initGoogleSheetsAPI() {
+    try {
+        // Validate config first
+        config.GOOGLE_SHEETS.validate();
+        
+        await gapi.load('client:auth2', () => {
+            return gapi.client.init({
+                apiKey: config.GOOGLE_SHEETS.API_KEY,
+                clientId: config.GOOGLE_SHEETS.CLIENT_ID,
+                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                scope: 'https://www.googleapis.com/auth/spreadsheets'
+            });
+        });
+        console.log('Google Sheets API initialized');
+        await loadFromGoogleSheets();
+    } catch (error) {
+        console.error('Failed to initialize Google Sheets API:', error);
+        alert('Failed to initialize Google Sheets. Please check your configuration.');
+    }
+}
+
+            async function loadFromGoogleSheets() {
+                try {
+                    const response = await gapi.client.sheets.spreadsheets.values.get({
+                        spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
+                        range: 'Sheet1!A:J'
+                    });
+                    const rows = response.result.values || [];
+                    if (rows.length) {
+                        adminRegistrationsData = rows.slice(1).map(row => ({
+                            fullName: row[0] || '',
+                            email: row[1] || '',
+                            nakshatra: row[2] || '',
+                            rasi: row[3] || '',
+                            sevaCycle: row[4] || '',
+                            startMonth: row[5] || '',
+                            address: row[6] || '',
+                            status: row[7] || 'Pending',
+                            registrationDate: row[8] || new Date().toISOString(),
+                            donationAmount: row[9] || '0'
+                        }));
+                        updateAdminDashboard();
+                    }
+                } catch (error) {
+                    console.error('Error loading from Google Sheets:', error);
+                }
+            }
+
+            async function saveToGoogleSheets(registrationData) {
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+        try {
+            // Validate data before saving
+            if (!registrationData.fullName || !registrationData.email) {
+                throw new Error('Required fields missing');
+            }
+            
+            const response = await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
+                range: 'Sheet1!A:J',
+                valueInputOption: 'RAW',
+                insertDataOption: 'INSERT_ROWS',
+                resource: {
+                    values: [[
+                        registrationData.fullName,
+                        registrationData.email,
+                        registrationData.nakshatra,
+                        registrationData.rasi,
+                        registrationData.sevaCycle,
+                        registrationData.startMonth,
+                        registrationData.address,
+                        registrationData.status,
+                        new Date().toISOString(),
+                        registrationData.donationAmount
+                    ]]
+                }
+            });
+            console.log('Data saved to Google Sheets:', response);
+            return true;
+        } catch (error) {
+            console.error(`Save attempt ${attempt + 1} failed:`, error);
+            attempt++;
+            if (attempt === maxRetries) {
+                alert('Failed to save registration. Please try again later.');
+                return false;
+            }
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+    }
+    return false;
+}
+
+            document.addEventListener('DOMContentLoaded', function() {
+                loadRegistrations();
+            });
+            let currentEditRegistrationId = null;
+            let currentDeleteRegistrationId = null;
+
+            registrationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(registrationForm);
+                const newRegistration = {
+                    id: crypto.randomUUID(),
+                    fullName: formData.get('full-name'),
+                    nakshatraRasi: formData.get('nakshatra-rasi'),
+                    sevaCycle: sevaData.find(s => s.id === formData.get('seva-cycle')).name,
+                    startMonth: new Date(formData.get('start-month')).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
+                    email: formData.get('email'),
+                    whatsapp: formData.get('whatsapp'),
+                    address: formData.get('address'),
+                    registrationDate: new Date().toLocaleDateString('en-GB'),
+                    status: "In Progress"
+                };
+                
+                // Save to Google Sheets
+                saveToGoogleSheets(newRegistration).then(success => {
+                    if (success) {
+                        // Show confirmation message
+                        hideAllSections();
+                        document.getElementById('register').classList.remove('hidden');
+                        registrationForm.classList.add('hidden');
+                        confirmationMessageDiv.classList.remove('hidden');
+                        
+                        // Add UPI payment button handler
+                        document.getElementById('upi-payment-btn').addEventListener('click', function() {
+                            // Replace with your actual UPI payment link
+                            const upiLink = `upi://pay?pa=your-upi-id@bank&pn=Siva%20Deepam%20Seva&am=${getSevaAmount(newRegistration.sevaCycle)}&tn=Seva%20Registration%20${newRegistration.id}`;
+                            window.location.href = upiLink;
+                        });
+                        
+                        updateAdminDashboard();
+                        registrationForm.reset();
+                    } else {
+                        alert('There was an error saving your registration. Please try again.');
+                    }
+                });
+            });
+
+            getInsightBtn.addEventListener('click', async () => {
+                insightModalOverlay.classList.remove('hidden');
+                insightContent.textContent = '';
+                insightLoading.classList.remove('hidden');
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: "Give a short, uplifting spiritual insight or blessing message (around 50-70 words) for someone offering a lamp in a temple, emphasizing devotion, light, and blessings from Lord Shiva. Ensure the tone is compassionate and inspiring." }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "AIzaSyAOmvvLo1NNkQCSVuDdUKYsX5CPkVm2Ruw";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        insightContent.textContent = text;
+                    } else {
+                        insightContent.textContent = "உள்ளீட்டைப் பெறுவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.";
+                        console.error("Gemini API பதிலின் அமைப்பு எதிர்பாராதது:", result);
+                    }
+                } catch (error) {
+                    insightContent.textContent = "உள்ளீட்டைப் பெறுவதில் நெட்வொர்க் பிழை ஏற்பட்டது. உங்கள் இணைய இணைப்பைச் சரிபார்க்கவும்.";
+                    console.error("ஜெமினி ஏபிஐ அழைப்பில் பிழை:", error);
+                } finally {
+                    insightLoading.classList.add('hidden');
+                }
+            });
+
+            closeInsightModal.addEventListener('click', () => {
+                insightModalOverlay.classList.add('hidden');
+            });
+
+            // Image generation feature
+            generateImageBtn.addEventListener('click', async () => {
+                generatedImageSection.classList.remove('hidden');
+                generatedImage.classList.add('hidden');
+                imageError.classList.add('hidden');
+                imageLoading.classList.remove('hidden');
+
+                const prompt = "A serene divine lamp offering to Lord Siva, glowing warmly in a temple setting, spiritual and peaceful ambiance.";
+                const payload = { instances: { prompt: prompt }, parameters: { "sampleCount": 1} };
+                const apiKey = ""; // API key is left empty here, Canvas will provide it at runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                        generatedImage.src = imageUrl;
+                        generatedImage.classList.remove('hidden');
+                    } else {
+                        imageError.textContent = "உருவத்தை உருவாக்குவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.";
+                        imageError.classList.remove('hidden');
+                        console.error("Image generation API response structure unexpected:", result);
+                    }
+                } catch (error) {
+                    imageError.textContent = "உருவத்தை உருவாக்குவதில் நெட்வொர்க் பிழை ஏற்பட்டது. உங்கள் இணைய இணைப்பைச் சரிபார்க்கவும்.";
+                    imageError.classList.remove('hidden');
+                    console.error("Image generation API call failed:", error);
+                } finally {
+                    imageLoading.classList.add('hidden');
+                }
+            });
+
+            // Admin Login Logic
+            const adminLoginForm = document.getElementById('admin-login-form');
+            const adminLoginSection = document.getElementById('admin-login');
+            const adminDashboardSection = document.getElementById('admin-dashboard');
+            const loginError = document.getElementById('login-error');
+            const adminNavLink = document.getElementById('admin-nav-link');
+            const adminNavLinkMobile = document.getElementById('admin-nav-link-mobile');
+            const adminLogoutBtn = document.getElementById('admin-logout-btn');
+
+            const allMainSections = document.querySelectorAll('main > section');
+
+            function hideAllSections() {
+                allMainSections.forEach(section => {
+                    section.classList.add('hidden');
+                });
+            }
+
+            adminNavLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                hideAllSections();
+                adminLoginSection.classList.remove('hidden');
+                mobileMenu.classList.add('hidden');
+            });
+            adminNavLinkMobile.addEventListener('click', (e) => {
+                e.preventDefault();
+                hideAllSections();
+                adminLoginSection.classList.remove('hidden');
+                mobileMenu.classList.add('hidden');
+            });
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const targetId = e.currentTarget.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        hideAllSections();
+                        targetSection.classList.remove('hidden');
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+
+            adminLoginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const username = document.getElementById('admin-username').value;
+                const password = document.getElementById('admin-password').value;
+
+                if (username === 'admin' && password === 'password') {
+                    loadRegistrations(); // Use local storage data
+                    adminLoginSection.classList.add('hidden');
+                    adminDashboardSection.classList.remove('hidden');
+                    loginError.classList.add('hidden');
+                } else {
+                    loginError.classList.remove('hidden');
+                }
+            });
+
+            adminLogoutBtn.addEventListener('click', () => {
+                adminDashboardSection.classList.add('hidden');
+                adminLoginSection.classList.remove('hidden');
+                document.getElementById('admin-username').value = '';
+                document.getElementById('admin-password').value = '';
+                hideAllSections();
+                document.getElementById('home').classList.remove('hidden');
+            });
+
+            // Admin Dashboard Functions
+            const registrationsTableBody = document.getElementById('registrations-table-body');
+            const filterKeyword = document.getElementById('filter-keyword');
+            const filterMonth = document.getElementById('filter-month');
+            const filterCycle = document.getElementById('filter-cycle');
+            const exportCsvBtn = document.getElementById('export-csv');
+            const exportExcelBtn = document.getElementById('export-excel');
+            const totalRegistrationsSpan = document.getElementById('total-registrations');
+            const activeCyclesSpan = document.getElementById('active-cycles');
+            const completedCyclesSpan = document.getElementById('completed-cycles');
+            let participantsChartInstance = null;
+            let adminDonationChartInstance = null; // New chart instance for admin donation comparison
+
+            // Helper function to get seva amount based on cycle
+function getSevaAmount(sevaCycle) {
+    const sevaAmounts = {
+        'Monthly Seva': 1116,
+        'Quarterly Seva': 3116,
+        'Half-Yearly Seva': 6116,
+        'Yearly Seva': 11116
+    };
+    return sevaAmounts[sevaCycle] || 1116; // Default to Monthly Seva amount if cycle not found
+}
+
+function updateAdminDashboard() {
+                const total = adminRegistrationsData.length;
+                const active = adminRegistrationsData.filter(reg => reg.status === 'In Progress').length;
+                const completed = adminRegistrationsData.filter(reg => reg.status === 'Completed').length;
+
+                totalRegistrationsSpan.textContent = total;
+                activeCyclesSpan.textContent = active;
+                completedCyclesSpan.textContent = completed;
+
+                renderRegistrationsTable();
+                updateParticipantsChart();
+                updateAdminDonationChart(); // Call to update the new donation chart
+                populateFilterOptions();
+            }
+
+            function renderRegistrationsTable() {
+                registrationsTableBody.innerHTML = '';
+                const filteredData = applyFilters(adminRegistrationsData);
+
+                filteredData.forEach(reg => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${reg.fullName}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${reg.email}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${reg.sevaCycle}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${reg.startMonth}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${reg.registrationDate}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${reg.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">
+                                ${reg.status}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            <button data-id="${reg.id}" class="edit-btn text-blue-600 hover:text-blue-900 mr-3">Edit</button>
+                            <button data-id="${reg.id}" class="delete-btn text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    `;
+                    registrationsTableBody.appendChild(row);
+                });
+
+                attachTableEventListeners();
+            }
+
+            function attachTableEventListeners() {
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.onclick = (e) => openEditModal(e.target.dataset.id);
+                });
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.onclick = (e) => openDeleteModal(e.target.dataset.id);
+                });
+            }
+
+            function applyFilters(data) {
+                let filtered = [...data];
+                const keyword = filterKeyword.value.toLowerCase();
+                const month = filterMonth.value;
+                const cycle = filterCycle.value;
+
+                if (keyword) {
+                    filtered = filtered.filter(reg =>
+                        reg.fullName.toLowerCase().includes(keyword) ||
+                        reg.email.toLowerCase().includes(keyword) ||
+                        reg.whatsapp?.toLowerCase().includes(keyword) ||
+                        reg.address.toLowerCase().includes(keyword) ||
+                        reg.nakshatraRasi?.toLowerCase().includes(keyword)
+                    );
+                }
+                if (month) {
+                    filtered = filtered.filter(reg =>
+                        reg.startMonth === month
+                    );
+                }
+                if (cycle) {
+                    filtered = filtered.filter(reg => reg.sevaCycle === cycle);
+                }
+                return filtered;
+            }
+
+            filterKeyword.addEventListener('input', renderRegistrationsTable);
+            filterMonth.addEventListener('change', renderRegistrationsTable);
+            filterCycle.addEventListener('change', renderRegistrationsTable);
+
+            function populateFilterOptions() {
+                filterMonth.innerHTML = '<option value="">Filter by Month</option>';
+                filterCycle.innerHTML = '<option value="">Filter by Cycle</option>';
+
+                const uniqueMonths = [...new Set(adminRegistrationsData.map(reg => reg.startMonth))].sort((a,b) => new Date(a) - new Date(b));
+                uniqueMonths.forEach(month => {
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = month;
+                    filterMonth.appendChild(option);
+                });
+
+                const uniqueCycles = [...new Set(adminRegistrationsData.map(reg => reg.sevaCycle))].sort();
+                uniqueCycles.forEach(cycle => {
+                    const option = document.createElement('option');
+                    option.value = cycle;
+                    option.textContent = cycle;
+                    filterCycle.appendChild(option);
+                });
+            }
+
+            function updateParticipantsChart() {
+                const cycleCounts = {};
+                adminRegistrationsData.forEach(reg => {
+                    cycleCounts[reg.sevaCycle] = (cycleCounts[reg.sevaCycle] || 0) + 1;
+                });
+
+                const labels = Object.keys(cycleCounts);
+                const data = Object.values(cycleCounts);
+
+                const backgroundColors = labels.map(label => {
+                    const seva = sevaData.find(s => s.name === label);
+                    return seva ? seva.color : 'rgba(100, 100, 100, 0.7)';
+                });
+                 const borderColors = labels.map(label => {
+                    const seva = sevaData.find(s => s.name === label);
+                    return seva ? seva.color.replace('0.7', '1') : 'rgba(100, 100, 100, 1)';
+                });
+
+                if (participantsChartInstance) {
+                    participantsChartInstance.destroy();
+                }
+
+                const ctx = document.getElementById('participantsChart').getContext('2d');
+                participantsChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Number of Participants',
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderColor: borderColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Participants'
+                                },
+                                ticks: {
+                                    precision: 0
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Seva Cycle'
+                                },
+                                ticks: {
+                                    autoSkip: false,
+                                    callback: function(value, index, values) {
+                                        const label = this.getLabelForValue(value);
+                                        if (label.length > 16) {
+                                            return label.substring(0, 16) + '...';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // New function to update the admin donation chart
+            function updateAdminDonationChart() {
+                if (adminDonationChartInstance) {
+                    adminDonationChartInstance.destroy();
+                }
+
+                const ctx = document.getElementById('adminDonationChart').getContext('2d');
+                adminDonationChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: sevaData.map(s => s.name),
+                        datasets: [{
+                            label: 'Donation Amount (INR)',
+                            data: sevaData.map(s => s.amount),
+                            backgroundColor: sevaData.map(s => s.color),
+                            borderColor: sevaData.map(s => s.color.replace('0.7', '1')),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.x !== null) {
+                                            label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed.x);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Donation Amount (₹)',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                }
+                            },
+                            y: {
+                                 ticks: {
+                                    autoSkip: false,
+                                    callback: function(value, index, values) {
+                                        const label = this.getLabelForValue(value);
+                                        if (label.length > 16) {
+                                            return label.substring(0, 16) + '...';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Export Functions
+            exportCsvBtn.addEventListener('click', () => {
+                const data = applyFilters(adminRegistrationsData);
+                let csvContent = "data:text/csv;charset=utf-8,";
+                // Headers
+                csvContent += "Name,Email,Nakshatra/Rasi,Seva Cycle,Start Month,Registration Date,Address,Status\n";
+                // Data
+                data.forEach(row => {
+                    const rowData = [
+                        `"${row.fullName}"`,
+                        `"${row.email}"`,
+                        `"${row.nakshatraRasi}"`,
+                        `"${row.sevaCycle}"`,
+                        `"${row.startMonth}"`,
+                        `"${row.registrationDate}"`,
+                        `"${row.address.replace(/"/g, '""')}"`, // Handle quotes in address
+                        `"${row.status}"`
+                    ];
+                    csvContent += rowData.join(",") + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "registrations.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            exportExcelBtn.addEventListener('click', () => {
+                const data = applyFilters(adminRegistrationsData);
+                // For a true Excel file (.xlsx), a more complex library is needed.
+                // This provides a basic TSV (Tab Separated Values) which Excel can open.
+                let tsvContent = "data:text/tab-separated-values;charset=utf-8,";
+                // Headers
+                tsvContent += "Name\tEmail\tNakshatra/Rasi\tSeva Cycle\tStart Month\tRegistration Date\tAddress\tStatus\n";
+                // Data
+                data.forEach(row => {
+                    const rowData = [
+                        `${row.fullName}`,
+                        `${row.email}`,
+                        `${row.nakshatraRasi}`,
+                        `${row.sevaCycle}`,
+                        `${row.startMonth}`,
+                        `${row.registrationDate}`,
+                        `${row.address.replace(/\n/g, ' ').replace(/\t/g, ' ')}`, // Remove newlines and tabs
+                        `${row.status}`
+                    ];
+                    tsvContent += rowData.join("\t") + "\n";
+                });
+
+                const encodedUri = encodeURI(tsvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "registrations.xls"); // .xls is often accepted for TSV
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+
+            // Edit Modal Functions
+            const editModalOverlay = document.getElementById('edit-modal-overlay');
+            const closeEditModalBtn = document.getElementById('close-edit-modal');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            const editRegistrationForm = document.getElementById('edit-registration-form');
+            const editSevaCycleSelect = document.getElementById('edit-seva-cycle');
+            const editStartMonthSelect = document.getElementById('edit-start-month');
+
+            // Populate edit modal's Seva Cycle and Pournami options
+            sevaData.forEach(seva => {
+                const option = document.createElement('option');
+                option.value = seva.name; // Use name as value for matching
+                option.textContent = `${seva.name} (₹${seva.amount})`;
+                editSevaCycleSelect.appendChild(option);
+            });
+            upcomingPournamis.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+                option.textContent = date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+                editStartMonthSelect.appendChild(option);
+            });
+
+
+            function openEditModal(id) {
+                currentEditRegistrationId = id;
+                const reg = adminRegistrationsData.find(r => r.id === id);
+                if (reg) {
+                    document.getElementById('edit-id').value = reg.id;
+                    document.getElementById('edit-full-name').value = reg.fullName;
+                    document.getElementById('edit-email').value = reg.email;
+                    document.getElementById('edit-nakshatra-rasi').value = reg.nakshatraRasi;
+                    document.getElementById('edit-seva-cycle').value = reg.sevaCycle;
+                    document.getElementById('edit-start-month').value = reg.startMonth;
+                    document.getElementById('edit-address').value = reg.address;
+                    document.getElementById('edit-status').value = reg.status;
+                    editModalOverlay.classList.remove('hidden');
+                }
+            }
+
+            closeEditModalBtn.addEventListener('click', () => {
+                editModalOverlay.classList.add('hidden');
+            });
+            cancelEditBtn.addEventListener('click', () => {
+                editModalOverlay.classList.add('hidden');
+            });
+
+            editRegistrationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-id').value;
+                const regIndex = adminRegistrationsData.findIndex(r => r.id === id);
+
+                if (regIndex !== -1) {
+                    adminRegistrationsData[regIndex] = {
+                        ...adminRegistrationsData[regIndex],
+                        fullName: document.getElementById('edit-full-name').value,
+                        email: document.getElementById('edit-email').value,
+                        nakshatraRasi: document.getElementById('edit-nakshatra-rasi').value,
+                        sevaCycle: document.getElementById('edit-seva-cycle').value,
+                        startMonth: document.getElementById('edit-start-month').value,
+                        address: document.getElementById('edit-address').value,
+                        status: document.getElementById('edit-status').value,
+                    };
+                    saveRegistrations();
+                    editModalOverlay.classList.add('hidden');
+                    updateAdminDashboard();
+                }
+            });
+
+            // Delete Modal Functions
+            const deleteModalOverlay = document.getElementById('delete-modal-overlay');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+
+            function openDeleteModal(id) {
+                currentDeleteRegistrationId = id;
+                deleteModalOverlay.classList.remove('hidden');
+            }
+
+            cancelDeleteBtn.addEventListener('click', () => {
+                deleteModalOverlay.classList.add('hidden');
+                currentDeleteRegistrationId = null;
+            });
+
+            confirmDeleteBtn.addEventListener('click', () => {
+                if (currentDeleteRegistrationId) {
+                    adminRegistrationsData = adminRegistrationsData.filter(reg => reg.id !== currentDeleteRegistrationId);
+                    saveRegistrations();
+                    deleteModalOverlay.classList.add('hidden');
+                    currentDeleteRegistrationId = null;
+                    updateAdminDashboard();
+                }
+            });
+
+            document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+            // Adjust iframe height based on content
+            window.addEventListener('message', function(e) {
+                if (e.data.type === 'form-height') {
+                    const form = document.getElementById('seva-registration-form');
+                    form.style.height = `${e.data.height}px`;
+                }
+            });
+
+            // Ensure form is responsive
+            window.addEventListener('resize', function() {
+                const form = document.getElementById('seva-registration-form');
+                if (window.innerWidth <= 768) {
+                    form.style.minHeight = '1000px';
+                } else {
+                    form.style.minHeight = '800px';
+                }
+            });
+
+            // Initial dashboard update on page load
+            updateAdminDashboard();
+        });
+    </script>
+</body>
+</html>
