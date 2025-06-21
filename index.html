@@ -6,9 +6,6 @@
     <title>Siva Deepam Seva - Divine Offering</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="config.js" type="module"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Rasa:wght@400;600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -23,8 +20,6 @@
         6. Report Info: AI Generated Image (New Feature). Goal: Enhance engagement/Visualize devotion. Viz/Method: Dynamically generated image using a large language model. Interaction: User clicks a button to generate an image. Justification: Provides a unique visual representation of their offering and adds a "wow" factor. Library/Method: Gemini API (imagen-3.0-generate-002), Vanilla JS for API call and UI updates.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-
-    
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -124,35 +119,93 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+        /* Enhanced animations and effects */
+        .nav-link {
+            @apply relative px-4 py-2 text-gray-700 hover:text-amber-600 transition-colors duration-300;
+        }
+        .nav-link::after {
+            content: '';
+            @apply absolute bottom-0 left-0 w-0 h-0.5 bg-amber-500 transition-all duration-300;
+        }
+        .nav-link:hover::after {
+            @apply w-full;
+        }
+        .nav-link.active {
+            @apply text-amber-600;
+        }
+        .nav-link.active::after {
+            @apply w-full;
+        }
+        
+        /* Enhanced decorative elements */
+        .decorative-circle {
+            @apply absolute rounded-full opacity-10 pointer-events-none;
+            background: radial-gradient(circle, var(--tw-gradient-from), transparent);
+        }
+        
+        /* Enhanced card effects */
+        .enhanced-card {
+            @apply relative overflow-hidden bg-white rounded-xl shadow-lg transition-all duration-300;
+            background: linear-gradient(135deg, #ffffff 0%, #fff8e1 100%);
+        }
+        .enhanced-card:hover {
+            @apply shadow-2xl transform -translate-y-2;
+            background: linear-gradient(135deg, #fff8e1 0%, #ffffff 100%);
+        }
+        
+        /* Floating animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* Enhanced glowing effect */
+        .enhanced-glow {
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.3),
+                        0 0 30px rgba(255, 152, 0, 0.2),
+                        0 0 45px rgba(255, 87, 34, 0.1);
+        }
     </style>
 </head>
 <body class="text-gray-800">
 
-    <header class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
-        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
-            <a href="#home" class="flex items-center space-x-2">
-                <div class="glowing-lamp">🪔</div>
-                <span class="text-xl font-bold font-serif-title text-amber-700">Siva Deepam Seva</span>
-            </a>
-            <nav class="hidden md:flex space-x-10">
-                <a href="#home" class="text-gray-600 hover:text-amber-600 nav-link">Home</a>
-                <a href="#legend" class="text-gray-600 hover:text-amber-600 nav-link">The Legend</a>
-                <a href="#seva" class="text-gray-600 hover:text-amber-600 nav-link">Seva Options</a>
-                <a href="#register" class="nav-link text-base font-medium text-gray-500 hover:text-gray-900">Register Now</a>
-                <a id="admin-nav-link" href="#" class="font-semibold px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Admin</a>
-            </nav>
-            <button id="mobile-menu-button" class="md:hidden text-amber-700 focus:outline-none">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+    <nav class="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md shadow-md z-50">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-2">
+                <span class="glowing-lamp text-2xl">🪔</span>
+                <span class="font-serif-title text-xl font-bold text-blue-900">Siva Deepam Seva</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#story" class="nav-link">Story</a>
+                <a href="#process" class="nav-link">Process</a>
+                <a href="#seva" class="nav-link">Seva Options</a>
+                <a href="#register" class="nav-link">Register</a>
+                <button class="btn-primary rounded-lg px-6 py-2">Login</button>
+            </div>
+            <button class="md:hidden btn-primary rounded-lg p-2" id="mobile-menu-button">
+                <span class="block w-6 h-0.5 bg-white mb-1"></span>
+                <span class="block w-6 h-0.5 bg-white mb-1"></span>
+                <span class="block w-6 h-0.5 bg-white"></span>
             </button>
-        </nav>
-        <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4">
-            <a href="#home" class="block py-2 text-gray-600 hover:text-amber-600 nav-link">Home</a>
-            <a href="#legend" class="block py-2 text-gray-600 hover:text-amber-600 nav-link">The Legend</a>
-            <a href="#seva" class="block py-2 text-gray-600 hover:text-amber-600 nav-link">Seva Options</a>
-            <a href="#register" class="block mt-2 text-center w-full font-semibold px-4 py-2 rounded-lg btn-primary nav-link">Register Now</a>
-            <a id="admin-nav-link-mobile" href="#" class="block mt-2 text-center w-full font-semibold px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">Admin</a>
         </div>
-    </header>
+    </div>
+    <!-- Mobile menu -->
+    <div class="md:hidden hidden" id="mobile-menu">
+        <div class="px-4 py-3 space-y-2 bg-white/90 backdrop-blur-md">
+            <a href="#home" class="block nav-link">Home</a>
+            <a href="#story" class="block nav-link">Story</a>
+            <a href="#process" class="block nav-link">Process</a>
+            <a href="#seva" class="block nav-link">Seva Options</a>
+            <a href="#register" class="block nav-link">Register</a>
+            <button class="btn-primary rounded-lg px-6 py-2 w-full mt-4">Login</button>
+        </div>
+    </div>
+</nav>
 
     <main>
         <section id="home" class="relative min-h-screen flex items-center justify-center bg-cover bg-center" style="background-image: url('images/home_image.png');">
@@ -163,6 +216,7 @@
                 <a href="#seva" class="mt-8 inline-block px-10 py-4 text-lg font-bold rounded-lg btn-primary shadow-lg transform hover:scale-105 transition-transform">Start My Deepam Seva</a>
             </div>
         </section>
+
 
         <section id="legend" class="py-20 md:py-28 bg-amber-50">
             <div class="container mx-auto px-6">
@@ -196,6 +250,117 @@
             </div>
         </section>
 
+        <section id="process" class="py-16 px-4 md:px-8 max-w-4xl mx-auto">
+    <h2 class="section-title mb-12">Sacred Process & Instructions</h2>
+    <div class="bg-white rounded-xl shadow-lg p-8 font-serif-body space-y-4 relative overflow-hidden">
+        <!-- Initial Setup Section -->
+        <div class="grid md:grid-cols-2 gap-8 items-center mb-12">
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3 text-amber-600 mb-4">
+                    <span class="text-3xl">🪔</span>
+                    <h3 class="text-xl font-bold">Initial Setup</h3>
+                </div>
+                <p>Always place Siva swamigal's photo on a clean white cloth. In front of the photo, light a lamp with ghee or oil, and offer a few flowers.</p>
+            </div>
+            <div class="rounded-lg overflow-hidden shadow-lg">
+                <!-- Replace src with your actual image path -->
+                <img src="images/process/lamp.jpg" alt="Lamp Setup" class="w-full h-64 object-cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%23DDD\' d=\'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z\'/%3E%3C/svg%3E'" />
+            </div>
+        </div>
+
+        <!-- Prerequisites Section -->
+        <div class="bg-amber-50 p-6 rounded-lg border-l-4 border-amber-500 mb-8">
+            <div class="flex items-center space-x-3 text-amber-600 mb-4">
+                <span class="text-2xl">🌱</span>
+                <h3 class="text-xl font-bold">Prerequisites</h3>
+            </div>
+            <ul class="space-y-3">
+                <li class="flex items-start space-x-3">
+                    <span class="text-amber-600 mt-1">•</span>
+                    <p>This pooja may be performed by anyone without any distinction of gender, caste, religion etc, but the person must eat purely vegetarian food.</p>
+                </li>
+                <li class="flex items-start space-x-3">
+                    <span class="text-amber-600 mt-1">•</span>
+                    <p>Being compassionate by choosing only vegetarian food is the first step towards worshiping Siva swamigal.</p>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Timing Section -->
+        <div class="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500 mb-8">
+            <div class="flex items-center space-x-3 text-blue-600 mb-4">
+                <span class="text-2xl">🌞</span>
+                <h3 class="text-xl font-bold">Timing</h3>
+            </div>
+            <ul class="space-y-3">
+                <li class="flex items-center space-x-3">
+                    <span class="text-blue-600">📅</span>
+                    <p>Perform every Pournami and Amavasya day (recommended daily)</p>
+                </li>
+                <li class="flex items-center space-x-3">
+                    <span class="text-blue-600">⏰</span>
+                    <p>Best during morning or evening sandhya kalam</p>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Step by Step Guide -->
+        <div class="space-y-8">
+            <h3 class="text-2xl font-bold text-blue-900 flex items-center">
+                <span class="text-amber-500 mr-3">🕉️</span> Step by Step Guide
+            </h3>
+            
+            <!-- Steps Grid -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Step 1: Sitting Pose -->
+                <div class="enhanced-card p-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="bg-amber-100 text-amber-600 rounded-full w-8 h-8 flex items-center justify-center font-bold">1</span>
+                        <h4 class="text-lg font-bold">Sitting Pose</h4>
+                    </div>
+                    <img src="images/process/meditation.jpg" alt="Meditation Pose" class="w-full h-48 object-cover rounded-lg mb-4" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%23DDD\' d=\'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z\'/%3E%3C/svg%3E'" />
+                    <p>Sit comfortably and keep your eyes closed during the entire process, except when needed.</p>
+                </div>
+
+                <!-- Step 2: Vibhuti Application -->
+                <div class="enhanced-card p-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="bg-amber-100 text-amber-600 rounded-full w-8 h-8 flex items-center justify-center font-bold">2</span>
+                        <h4 class="text-lg font-bold">Vibhuti Application</h4>
+                    </div>
+                    <img src="images/process/vibhuti.jpg" alt="Vibhuti Application" class="w-full h-48 object-cover rounded-lg mb-4" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'%23DDD\' d=\'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z\'/%3E%3C/svg%3E'" />
+                    <p>Take vibhuti, chant Om Guru three times, and apply between eyebrows.</p>
+                </div>
+
+                <!-- Sacred Mantra Section -->
+                <div class="enhanced-card p-6 md:col-span-2">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="text-2xl">🕉️</span>
+                        <h4 class="text-lg font-bold">Sacred Mantra</h4>
+                    </div>
+                    <div class="bg-gradient-to-r from-amber-500 to-amber-600 p-6 rounded-lg text-white text-center">
+                        <p class="font-serif-title text-xl mb-2">Om. Vang! Vasi chittaya vidmahe</p>
+                        <p class="font-serif-title text-xl mb-2">Sing! Siva priyaya dheemahi</p>
+                        <p class="font-serif-title text-xl">Thannoh Siva prachotayat!</p>
+                    </div>
+                    <p class="mt-4 text-center text-gray-600">Chant 3 to 11 times, preferably aloud</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tamil Section with Decorative Border -->
+        <div class="mt-12 p-8 bg-gradient-to-br from-blue-900 to-blue-800 rounded-lg text-center text-white relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full opacity-10">
+                <div class="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
+                <div class="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
+                <div class="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
+                <div class="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-white rounded-br-lg"></div>
+            </div>
+            <p class="text-lg relative z-10">கருணையே வடிவான குருதேவர் சிவா ஸ்வாமிகள். சுரண்டை ஸ்ரீ ப்ரஹ்மநாயக்க  ஸ்வாமிகளிடம் தீக்ஷை பெற்று, அவர் சிதம்பரம் நடராஜர் கோயிலில் பல ஆண்டு தவம் செய்து, சிவபுரியில் ஜீவசமாதி அடைந்தார். இந்த பூஜா விதியினால், அவருடைய  சான்னித்தியம் உணர்ந்து, எல்லோரும்  அவருடைய அன்பும் அருளும் பெறலாம். ஓம் சிவா!</p>
+        </div>
+    </div>
+</section>
+
         <section id="seva" class="py-20 md:py-28">
             <div class="container mx-auto px-6">
                 <h2 class="section-title mb-4">Choose Your Seva</h2>
@@ -212,6 +377,61 @@
                         </ul>
                     </div>
                 </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+        const sevaData = [
+            { id: 'MA', days: 48, name: 'Mahadeepa Arpanam', amount: 2500, color: 'rgba(255, 99, 132, 0.7)' },
+            { id: 'SJS', days: 21, name: 'Shiva Jwala Seva', amount: 1200, color: 'rgba(54, 162, 235, 0.7)' },
+            { id: 'JSS', days: 11, name: 'Jyoti Sankalpa Seva', amount: 700, color: 'rgba(255, 206, 86, 0.7)' },
+            { id: 'TS', days: 3, name: 'Trideepa Seva', amount: 300, color: 'rgba(75, 192, 192, 0.7)' }
+        ];
+
+        const sevaCycleSelect = document.getElementById('seva-cycle');
+        const sevaGrid = document.querySelector('#seva .grid');
+
+        if (sevaCycleSelect && sevaGrid) {
+            // Clear existing options first
+            sevaCycleSelect.innerHTML = '';
+            
+            // Add a default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select a Seva Option';
+            sevaCycleSelect.appendChild(defaultOption);
+
+            // Populate seva options
+            sevaData.forEach(seva => {
+                // Add to dropdown
+                const option = document.createElement('option');
+                option.value = seva.id;
+                option.textContent = `${seva.name} (₹${seva.amount})`;
+                sevaCycleSelect.appendChild(option);
+
+                // Add to grid
+                const card = document.createElement('div');
+                card.className = 'card p-6 text-center transform hover:scale-105 transition-transform duration-300';
+                card.innerHTML = `
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg p-6 shadow-lg">
+                        <h3 class="text-2xl font-serif-title font-bold text-blue-900">${seva.name}</h3>
+                        <p class="text-xl text-gray-500 mt-2">${seva.days} Days</p>
+                        <p class="text-4xl font-bold text-amber-600 my-4">₹${seva.amount.toLocaleString('en-IN')}</p>
+                        <button class="select-seva-btn w-full px-6 py-3 font-semibold rounded-lg btn-primary" data-seva-id="${seva.id}">Select Seva</button>
+                    </div>
+                `;
+                sevaGrid.appendChild(card);
+            });
+
+            // Add event listeners to the select-seva buttons
+            document.querySelectorAll('.select-seva-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const sevaId = this.getAttribute('data-seva-id');
+                    sevaCycleSelect.value = sevaId;
+                    document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        }
+    });
+                </script>
             </div>
         </section>
 
@@ -220,36 +440,33 @@
                 <h2 class="section-title mb-4">Register for Your Seva</h2>
                 <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-12">Complete this form to finalize your lamp offering. Your details will be used for the Archana (prayers) and to send you prasadam after the Seva is completed. Upon submission, you will be directed to a secure payment gateway.</p>
                 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12">
-                    <form id="registration-form" class="space-y-6">
+                     <form id="registration-form" class="space-y-6">
+                        <iframe 
+                        id="seva-registration-form"
+                        class="w-full transition-all duration-300 ease-in-out"
+                        style="min-height: 800px;"
+                        src="https://docs.google.com/forms/d/e/1FAIpQLSdchsSg4JBfSE498vNDg5r3oyf24jbwo726SMnxaKBFhuVXrA/viewform?embedded=true"
+                        frameborder="0"
+                        marginheight="0"
+                        marginwidth="0"
+                        allowfullscreen
+                        webkitallowfullscreen
+                        mozallowfullscreen>
+                        Loading...
+                    </iframe>
+
                         <div>
-                            <label for="full-name" class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-                            <input type="text" id="full-name" name="full-name" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label for="nakshatra-rasi" class="block text-sm font-medium text-gray-700">Nakshatra / Rasi (Optional)</label>
-                            <input type="text" id="nakshatra-rasi" name="nakshatra-rasi" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label for="seva-cycle" class="block text-sm font-medium text-gray-700">Seva Cycle <span class="text-red-500">*</span></label>
-                            <select id="seva-cycle" name="seva-cycle" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm rounded-md"></select>
-                        </div>
-                        <div>
-                            <label for="start-month" class="block text-sm font-medium text-gray-700">Preferred Start Pournami (Full Moon) <span class="text-red-500">*</span></label>
-                            <select id="start-month" name="start-month" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm rounded-md"></select>
-                        </div>
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700">Email Address <span class="text-red-500">*</span></label>
-                            <input type="email" id="email" name="email" required placeholder="For e-certificate and prasadam updates" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label for="whatsapp" class="block text-sm font-medium text-gray-700">WhatsApp Number <span class="text-red-500">*</span></label>
-                            <input type="tel" id="whatsapp" name="whatsapp" required placeholder="For updates and communication" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label for="address" class="block text-sm font-medium text-gray-700">Full Address <span class="text-red-500">*</span></label>
-                            <textarea id="address" name="address" rows="4" required placeholder="For prasadam delivery" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"></textarea>
-                        </div>
-                        <div>
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" id="consent" name="consent" required class="mt-1 h-5 w-5 text-amber-500 border-gray-300 rounded focus:ring-amber-500">
+                                <span class="block text-sm text-gray-700 mt-0.5">
+                                    I offer this Seva with gratitude, love, and full awareness, recognizing it as a sacred act of service (seva) to Sri Siva Swamigal and for the well-being of all beings.
+                                    <br><br>
+                                    By proceeding, I confirm my wholehearted consent to be part of this divine journey in alignment with the spirit of devotion and discipline.
+                                </span>
+                            </label>
+                        </div> 
+
+                        <div> 
                             <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">Proceed to Payment</button>
                         </div>
                     </form>
@@ -263,6 +480,13 @@
                             <button id="get-insight-btn" class="inline-block px-8 py-3 text-lg font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-lg transform hover:scale-105">✨ Get Your Divine Insight</button>
                             <button id="generate-image-btn" class="inline-block px-8 py-3 text-lg font-bold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-lg transform hover:scale-105">🖼️ Generate Divine Image</button>
                         </div>
+                        <script>
+                            document.getElementById('upi-payment-btn').addEventListener('click', function() {
+                                // Add your UPI payment gateway integration here
+                                // Example: Redirect to payment gateway or show UPI details
+                                alert('Redirecting to UPI payment...'); // Replace with actual payment integration
+                            });
+                        </script>
                         <div id="generated-image-section" class="mt-8 hidden">
                             <h4 class="text-xl font-bold text-blue-900 mb-4">Generated Divine Image</h4>
                             <div id="image-loading" class="mt-4 text-amber-600 hidden">
@@ -471,16 +695,7 @@
 
 
     <script>
-        const sevaData = [
-    { id: 'MA', days: 48, name: 'Mahadeepa Arpanam', amount: 2500, color: 'rgba(255, 99, 132, 0.7)' },
-    { id: 'SJS', days: 21, name: 'Shiva Jwala Seva', amount: 1200, color: 'rgba(54, 162, 235, 0.7)' },
-    { id: 'JSS', days: 11, name: 'Jyoti Sankalpa Seva', amount: 700, color: 'rgba(255, 206, 86, 0.7)' },
-    { id: 'TS', days: 3, name: 'Trideepa Seva', amount: 300, color: 'rgba(75, 192, 192, 0.7)' }
-];
-
-document.addEventListener('DOMContentLoaded', function() {
-    loadRegistrations();
-            loadRegistrations();
+        document.addEventListener('DOMContentLoaded', function() {
             // Handle all navigation links including the Seva button
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function (e) {
@@ -536,8 +751,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 { id: 'MA', days: 48, name: 'Mahadeepa Arpanam', amount: 2500, color: 'rgba(255, 99, 132, 0.7)' },
                 { id: 'SJS', days: 21, name: 'Shiva Jwala Seva', amount: 1200, color: 'rgba(54, 162, 235, 0.7)' },
                 { id: 'JSS', days: 11, name: 'Jyoti Sankalpa Seva', amount: 700, color: 'rgba(255, 206, 86, 0.7)' },
-                { id: 'TS', days: 3, name: 'Trideepa Seva', amount: 300, color: 'rgba(75, 192, 192, 0.7)' }
-                /*,                { id: 'EDS', days: 1, name: 'Eka Deepa Seva', amount: 108, color: 'rgba(153, 102, 255, 0.7)' }*/
+                { id: 'TS', days: 3, name: 'Trideepa Seva', amount: 300, color: 'rgba(75, 192, 192, 0.7)' },
+                
             ];
 
             const sevaCycleSelect = document.getElementById('seva-cycle');
@@ -610,112 +825,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
             // --- Admin Panel Data & Functions ---
-            let adminRegistrationsData = [];
+            let adminRegistrationsData = []; // This will simulate our database
+            let currentEditRegistrationId = null; // To store the ID of the registration being edited
+            let currentDeleteRegistrationId = null; // To store the ID of the registration being deleted
 
-            function loadRegistrations() {
-                initGoogleSheetsAPI();
-            }
-
-            async function initGoogleSheetsAPI() {
-    try {
-        // Validate config first
-        config.GOOGLE_SHEETS.validate();
-        
-        await gapi.load('client:auth2', () => {
-            return gapi.client.init({
-                apiKey: config.GOOGLE_SHEETS.API_KEY,
-                clientId: config.GOOGLE_SHEETS.CLIENT_ID,
-                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-                scope: 'https://www.googleapis.com/auth/spreadsheets'
-            });
-        });
-        console.log('Google Sheets API initialized');
-        await loadFromGoogleSheets();
-    } catch (error) {
-        console.error('Failed to initialize Google Sheets API:', error);
-        alert('Failed to initialize Google Sheets. Please check your configuration.');
-    }
-}
-
-            async function loadFromGoogleSheets() {
-                try {
-                    const response = await gapi.client.sheets.spreadsheets.values.get({
-                        spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
-                        range: 'Sheet1!A:J'
-                    });
-                    const rows = response.result.values || [];
-                    if (rows.length) {
-                        adminRegistrationsData = rows.slice(1).map(row => ({
-                            fullName: row[0] || '',
-                            email: row[1] || '',
-                            nakshatra: row[2] || '',
-                            rasi: row[3] || '',
-                            sevaCycle: row[4] || '',
-                            startMonth: row[5] || '',
-                            address: row[6] || '',
-                            status: row[7] || 'Pending',
-                            registrationDate: row[8] || new Date().toISOString(),
-                            donationAmount: row[9] || '0'
-                        }));
-                        updateAdminDashboard();
-                    }
-                } catch (error) {
-                    console.error('Error loading from Google Sheets:', error);
-                }
-            }
-
-            async function saveToGoogleSheets(registrationData) {
-    const maxRetries = 3;
-    let attempt = 0;
-    
-    while (attempt < maxRetries) {
-        try {
-            // Validate data before saving
-            if (!registrationData.fullName || !registrationData.email) {
-                throw new Error('Required fields missing');
-            }
-            
-            const response = await gapi.client.sheets.spreadsheets.values.append({
-                spreadsheetId: config.GOOGLE_SHEETS.SPREADSHEET_ID,
-                range: 'Sheet1!A:J',
-                valueInputOption: 'RAW',
-                insertDataOption: 'INSERT_ROWS',
-                resource: {
-                    values: [[
-                        registrationData.fullName,
-                        registrationData.email,
-                        registrationData.nakshatra,
-                        registrationData.rasi,
-                        registrationData.sevaCycle,
-                        registrationData.startMonth,
-                        registrationData.address,
-                        registrationData.status,
-                        new Date().toISOString(),
-                        registrationData.donationAmount
-                    ]]
-                }
-            });
-            console.log('Data saved to Google Sheets:', response);
-            return true;
-        } catch (error) {
-            console.error(`Save attempt ${attempt + 1} failed:`, error);
-            attempt++;
-            if (attempt === maxRetries) {
-                alert('Failed to save registration. Please try again later.');
-                return false;
-            }
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
-    }
-    return false;
-}
-
-            document.addEventListener('DOMContentLoaded', function() {
-                loadRegistrations();
-            });
-            let currentEditRegistrationId = null;
-            let currentDeleteRegistrationId = null;
+            // Dummy initial data for admin panel
+            const addDummyData = () => {
+                const now = new Date();
+                adminRegistrationsData.push({
+                    id: crypto.randomUUID(),
+                    fullName: "Anand Kumar",
+                    nakshatraRasi: "Punarvasu / Mithunam",
+                    sevaCycle: "Mahadeepa Arpanam",
+                    startMonth: upcomingPournamis[0].toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
+                    email: "anand.k@example.com",
+                    address: "123 Temple Road, Chennai, Tamil Nadu 600001, India",
+                    registrationDate: now.toLocaleDateString('en-GB'),
+                    status: "In Progress"
+                });
+                adminRegistrationsData.push({
+                    id: crypto.randomUUID(),
+                    fullName: "Priya Sharma",
+                    nakshatraRasi: "Rohini / Rishabam",
+                    sevaCycle: "Shiva Jwala Seva",
+                    startMonth: upcomingPournamis[1].toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
+                    email: "priya.s@example.com",
+                    address: "456 Divine Lane, Bangalore, Karnataka 560001, India",
+                    registrationDate: now.toLocaleDateString('en-GB'),
+                    status: "Completed"
+                });
+                adminRegistrationsData.push({
+                    id: crypto.randomUUID(),
+                    fullName: "Rahul Gupta",
+                    nakshatraRasi: "",
+                    sevaCycle: "Eka Deepa Seva",
+                    startMonth: upcomingPournamis[0].toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
+                    email: "rahul.g@example.com",
+                    address: "789 Sacred Street, Delhi, Delhi 110001, India",
+                    registrationDate: now.toLocaleDateString('en-GB'),
+                    status: "In Progress"
+                });
+            };
+            addDummyData(); // Add some dummy data on load
 
             registrationForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -728,34 +879,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     sevaCycle: sevaData.find(s => s.id === formData.get('seva-cycle')).name,
                     startMonth: new Date(formData.get('start-month')).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
                     email: formData.get('email'),
-                    whatsapp: formData.get('whatsapp'),
                     address: formData.get('address'),
                     registrationDate: new Date().toLocaleDateString('en-GB'),
                     status: "In Progress"
                 };
-                
-                // Save to Google Sheets
-                saveToGoogleSheets(newRegistration).then(success => {
-                    if (success) {
-                        // Show confirmation message
-                        hideAllSections();
-                        document.getElementById('register').classList.remove('hidden');
-                        registrationForm.classList.add('hidden');
-                        confirmationMessageDiv.classList.remove('hidden');
-                        
-                        // Add UPI payment button handler
-                        document.getElementById('upi-payment-btn').addEventListener('click', function() {
-                            // Replace with your actual UPI payment link
-                            const upiLink = `upi://pay?pa=your-upi-id@bank&pn=Siva%20Deepam%20Seva&am=${getSevaAmount(newRegistration.sevaCycle)}&tn=Seva%20Registration%20${newRegistration.id}`;
-                            window.location.href = upiLink;
-                        });
-                        
-                        updateAdminDashboard();
-                        registrationForm.reset();
-                    } else {
-                        alert('There was an error saving your registration. Please try again.');
-                    }
-                });
+                adminRegistrationsData.push(newRegistration);
+
+                // Show confirmation message without hiding the register section
+                registrationForm.classList.add('hidden');
+                confirmationMessageDiv.classList.remove('hidden');
+
+                updateAdminDashboard();
             });
 
             getInsightBtn.addEventListener('click', async () => {
@@ -766,7 +900,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: "Give a short, uplifting spiritual insight or blessing message (around 50-70 words) for someone offering a lamp in a temple, emphasizing devotion, light, and blessings from Lord Shiva. Ensure the tone is compassionate and inspiring." }] });
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyAOmvvLo1NNkQCSVuDdUKYsX5CPkVm2Ruw";
+                const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -879,16 +1013,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
 
-            adminLoginForm.addEventListener('submit', async function(e) {
+            adminLoginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const username = document.getElementById('admin-username').value;
                 const password = document.getElementById('admin-password').value;
 
                 if (username === 'admin' && password === 'password') {
-                    loadRegistrations(); // Use local storage data
                     adminLoginSection.classList.add('hidden');
                     adminDashboardSection.classList.remove('hidden');
                     loginError.classList.add('hidden');
+                    updateAdminDashboard();
                 } else {
                     loginError.classList.remove('hidden');
                 }
@@ -916,18 +1050,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let participantsChartInstance = null;
             let adminDonationChartInstance = null; // New chart instance for admin donation comparison
 
-            // Helper function to get seva amount based on cycle
-function getSevaAmount(sevaCycle) {
-    const sevaAmounts = {
-        'Monthly Seva': 1116,
-        'Quarterly Seva': 3116,
-        'Half-Yearly Seva': 6116,
-        'Yearly Seva': 11116
-    };
-    return sevaAmounts[sevaCycle] || 1116; // Default to Monthly Seva amount if cycle not found
-}
-
-function updateAdminDashboard() {
+            function updateAdminDashboard() {
                 const total = adminRegistrationsData.length;
                 const active = adminRegistrationsData.filter(reg => reg.status === 'In Progress').length;
                 const completed = adminRegistrationsData.filter(reg => reg.status === 'Completed').length;
@@ -989,15 +1112,13 @@ function updateAdminDashboard() {
                 if (keyword) {
                     filtered = filtered.filter(reg =>
                         reg.fullName.toLowerCase().includes(keyword) ||
-                        reg.email.toLowerCase().includes(keyword) ||
-                        reg.whatsapp?.toLowerCase().includes(keyword) ||
-                        reg.address.toLowerCase().includes(keyword) ||
-                        reg.nakshatraRasi?.toLowerCase().includes(keyword)
+                        reg.email.toLowerCase().includes(keyword)
                     );
                 }
                 if (month) {
                     filtered = filtered.filter(reg =>
-                        reg.startMonth === month
+                        new Date(reg.startMonth).getMonth() === new Date(month).getMonth() &&
+                        new Date(reg.startMonth).getFullYear() === new Date(month).getFullYear()
                     );
                 }
                 if (cycle) {
@@ -1301,7 +1422,6 @@ function updateAdminDashboard() {
                         address: document.getElementById('edit-address').value,
                         status: document.getElementById('edit-status').value,
                     };
-                    saveRegistrations();
                     editModalOverlay.classList.add('hidden');
                     updateAdminDashboard();
                 }
@@ -1325,7 +1445,6 @@ function updateAdminDashboard() {
             confirmDeleteBtn.addEventListener('click', () => {
                 if (currentDeleteRegistrationId) {
                     adminRegistrationsData = adminRegistrationsData.filter(reg => reg.id !== currentDeleteRegistrationId);
-                    saveRegistrations();
                     deleteModalOverlay.classList.add('hidden');
                     currentDeleteRegistrationId = null;
                     updateAdminDashboard();
@@ -1338,5 +1457,64 @@ function updateAdminDashboard() {
             updateAdminDashboard();
         });
     </script>
+<script>
+    // Navigation highlighting
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    function highlightNavigation() {
+        const scrollPos = window.scrollY + 100; // Offset for fixed header
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.offsetHeight;
+            const sectionId = section.getAttribute('id');
+            
+            if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${sectionId}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }
+    
+    // Mobile menu toggle
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+    
+    // Close mobile menu when clicking a link
+    document.querySelectorAll('#mobile-menu .nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+        });
+    });
+    
+    // Add scroll event listener
+    window.addEventListener('scroll', highlightNavigation);
+    
+    // Initial highlight
+    highlightNavigation();
+    
+    // Add smooth scroll offset for fixed header
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            const offset = 80; // Height of fixed header
+            const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
 </body>
 </html>
